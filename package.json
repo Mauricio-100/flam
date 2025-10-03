@@ -1,0 +1,22 @@
+{
+  "name": "flam",
+  "version": "1.0.0",
+  "description": "Le client en ligne de commande pour le Registre Dragon.",
+  "main": "flam.js",
+  "bin": {
+    "flam": "./flam.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.7.2",
+    "chalk": "^4.1.2",
+    "commander": "^12.1.0",
+    "form-data": "^4.0.0",
+    "fs-extra": "^11.2.0"
+  }
+}
