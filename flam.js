@@ -6,13 +6,13 @@
  */
 
 // --- IMPORTS DES DÉPENDANCES ---
-const { Command } = require('commander');
-const axios = require('axios');
-const chalk = require('chalk');
-const path = require('path');
-const fse = require('fs-extra');
-const FormData = require('form-data');
-const os = require('os');
+import { Command } from 'commander';
+import axios from 'axios';
+import chalk from 'chalk';
+import path from 'path';
+import fse from 'fs-extra';
+import FormData from 'form-data';
+import os from 'os';
 
 // --- CONFIGURATION CENTRALE ---
 const API_URL = "https://sarver-fullstack-4.onrender.com";
