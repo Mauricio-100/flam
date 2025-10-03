@@ -5,14 +5,14 @@
  * Ce script gère l'authentification, la publication, la recherche et l'installation de paquets.
  */
 
-// --- IMPORTS DES DÉPENDANCES ---
-import { Command } from 'commander';
-import axios from 'axios';
-import chalk from 'chalk';
-import path from 'path';
-import fse from 'fs-extra';
-import FormData from 'form-data';
-import os from 'os';
+// --- IMPORTS DES DÉPENDANCES (style CommonJS) ---
+const { Command } = require('commander');
+const axios = require('axios');
+const chalk = require('chalk');
+const path = require('path');
+const fse = require('fs-extra');
+const FormData = require('form-data');
+const os = require('os');
 
 // --- CONFIGURATION CENTRALE ---
 const API_URL = "https://sarver-fullstack-4.onrender.com";
@@ -84,7 +84,6 @@ program
     .action(async (filePath) => {
         const apiKey = await loadApiKey();
         if (!apiKey) {
-            // CORRECTION APPLIQUÉE ICI : Utilisation des backticks `` pour éviter les problèmes d'apostrophe.
             console.error(chalk.red(`Vous n'êtes pas connecté. Veuillez utiliser \`flam login <email> <password>\`.`));
             return;
         }
