@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "Le client en ligne de commande pour le Registre Dragon.",
   "main": "flam.js",
-  "type": "module",
   "bin": {
     "flam": "./flam.js"
   },
