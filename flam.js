@@ -7,7 +7,7 @@ const path = require('path');
 const fse = require('fs-extra');
 const FormData = require('form-data');
 const os = require('os');
-const http = require('http'); // <--- NOUVEL IMPORT
+const https = require('https'); // <-- LA VRAIE CORRECTION : on importe HTTPS
 
 const program = new Command();
 
@@ -15,12 +15,12 @@ const program = new Command();
 const API_URL = "https://sarver-fullstack-4.onrender.com";
 const CONFIG_PATH = path.join(os.homedir(), '.flamconfig.json');
 
-// --- NOUVEAU : AGENT HTTP POUR FORCER IPv4 ---
-// C'est la correction pour le problème 'connect EINVAL'
-const httpAgent = new http.Agent({ family: 4 });
+// --- LA VRAIE CORRECTION : AGENT HTTPS POUR FORCER IPv4 ---
+// L'URL est en HTTPS, il faut donc utiliser un https.Agent.
+const httpsAgent = new https.Agent({ family: 4 });
 
-// On crée une instance d'axios pré-configurée
-const apiClient = axios.create({ httpAgent });
+// On crée une instance d'axios pré-configurée avec le BON agent
+const apiClient = axios.create({ httpsAgent });
 
 // --- FONCTIONS UTILITAIRES ---
 async function saveApiKey(key) { await fse.writeJson(CONFIG_PATH, { apiKey: key }); }
@@ -45,7 +45,7 @@ program
     .action(async (email, password) => {
         console.log(chalk.yellow('Tentative de connexion...'));
         try {
-            // On utilise maintenant 'apiClient' au lieu de 'axios'
+            // On utilise apiClient qui est maintenant correctement configuré
             const loginRes = await apiClient.post(`${API_URL}/auth/login`, { email, password });
             const token = loginRes.data.token;
             const apiTokenRes = await apiClient.post(`${API_URL}/user/api-token`, {}, { headers: { 'Authorization': `Bearer ${token}` } });
@@ -70,7 +70,7 @@ program
         let packageName, version, description;
         try {
             const pkgJson = await fse.readJson(path.join(process.cwd(), 'package.json'));
-            packageName = pkgJson.name; version = pkgJson.name; description = pkgJson.description;
+            packageName = pkgJson.name; version = pkgJson.version; description = pkgJson.description;
         } catch (error) {
             console.error(chalk.red('Erreur : Impossible de trouver ou lire le fichier `package.json` dans le dossier actuel.'));
             return;
@@ -83,8 +83,7 @@ program
             form.append('description', description);
             form.append('package', fse.createReadStream(filePath));
             const response = await apiClient.post(`${API_URL}/packages/publish`, form, { 
-                headers: { ...form.getHeaders(), 'Authorization': `Bearer ${apiKey}` },
-                httpAgent // On s'assure que l'agent est utilisé même pour les requêtes post
+                headers: { ...form.getHeaders(), 'Authorization': `Bearer ${apiKey}` }
             });
             console.log(chalk.green(`✅ ${response.data.message}`));
         } catch (error) {
@@ -99,7 +98,7 @@ program
     .action(async (query) => {
         console.log(chalk.yellow(`Recherche de paquets pour "${query}"...`));
         try {
-            // On utilise 'apiClient'
+            // On utilise apiClient
             const res = await apiClient.get(`${API_URL}/packages/search?q=${query}`);
             if (res.data.length === 0) {
                 console.log(chalk.white('Aucun paquet trouvé.'));
