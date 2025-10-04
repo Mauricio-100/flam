@@ -7,20 +7,18 @@ const path = require('path');
 const fse = require('fs-extra');
 const FormData = require('form-data');
 const os = require('os');
-const https = require('https'); // <-- LA VRAIE CORRECTION : on importe HTTPS
+const dns = require('dns'); // On importe le module DNS de Node.js
+
+// --- LA CORRECTION DÉFINITIVE ---
+// On ordonne à Node.js de manière globale de toujours préférer les adresses IPv4.
+// Ceci résout le problème 'connect EINVAL' dans les environnements réseau restrictifs.
+dns.setDefaultResultOrder('ipv4first');
 
 const program = new Command();
 
 // --- CONFIGURATION ---
 const API_URL = "https://sarver-fullstack-4.onrender.com";
 const CONFIG_PATH = path.join(os.homedir(), '.flamconfig.json');
-
-// --- LA VRAIE CORRECTION : AGENT HTTPS POUR FORCER IPv4 ---
-// L'URL est en HTTPS, il faut donc utiliser un https.Agent.
-const httpsAgent = new https.Agent({ family: 4 });
-
-// On crée une instance d'axios pré-configurée avec le BON agent
-const apiClient = axios.create({ httpsAgent });
 
 // --- FONCTIONS UTILITAIRES ---
 async function saveApiKey(key) { await fse.writeJson(CONFIG_PATH, { apiKey: key }); }
@@ -45,10 +43,9 @@ program
     .action(async (email, password) => {
         console.log(chalk.yellow('Tentative de connexion...'));
         try {
-            // On utilise apiClient qui est maintenant correctement configuré
-            const loginRes = await apiClient.post(`${API_URL}/auth/login`, { email, password });
+            const loginRes = await axios.post(`${API_URL}/auth/login`, { email, password });
             const token = loginRes.data.token;
-            const apiTokenRes = await apiClient.post(`${API_URL}/user/api-token`, {}, { headers: { 'Authorization': `Bearer ${token}` } });
+            const apiTokenRes = await axios.post(`${API_URL}/user/api-token`, {}, { headers: { 'Authorization': `Bearer ${token}` } });
             const apiKey = apiTokenRes.data.api_token;
             await saveApiKey(apiKey);
             console.log(chalk.green('✅ Connexion réussie ! Votre clé API a été sauvegardée.'));
@@ -82,7 +79,7 @@ program
             form.append('version', version);
             form.append('description', description);
             form.append('package', fse.createReadStream(filePath));
-            const response = await apiClient.post(`${API_URL}/packages/publish`, form, { 
+            const response = await axios.post(`${API_URL}/packages/publish`, form, { 
                 headers: { ...form.getHeaders(), 'Authorization': `Bearer ${apiKey}` }
             });
             console.log(chalk.green(`✅ ${response.data.message}`));
@@ -98,8 +95,7 @@ program
     .action(async (query) => {
         console.log(chalk.yellow(`Recherche de paquets pour "${query}"...`));
         try {
-            // On utilise apiClient
-            const res = await apiClient.get(`${API_URL}/packages/search?q=${query}`);
+            const res = await axios.get(`${API_URL}/packages/search?q=${query}`);
             if (res.data.length === 0) {
                 console.log(chalk.white('Aucun paquet trouvé.'));
                 return;
@@ -119,11 +115,11 @@ program
     .action(async (packageName) => {
         console.log(chalk.yellow(`Recherche de ${chalk.bold(packageName)}...`));
         try {
-            const detailsRes = await apiClient.get(`${API_URL}/packages/details/${packageName}`);
+            const detailsRes = await axios.get(`${API_URL}/packages/details/${packageName}`);
             const { version } = detailsRes.data;
             console.log(chalk.yellow(`Téléchargement de ${chalk.bold(packageName)}@${chalk.bold(version)}...`));
             const downloadUrl = `${API_URL}/packages/download/${packageName}/${version}`;
-            const response = await apiClient.get(downloadUrl, { responseType: 'stream' });
+            const response = await axios.get(downloadUrl, { responseType: 'stream' });
             const installDir = path.join(process.cwd(), 'flam_modules');
             await fse.ensureDir(installDir);
             const filePath = path.join(installDir, `${packageName}-${version}.zip`);
